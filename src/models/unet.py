@@ -34,12 +34,31 @@ class ConvBlock(nn.Module):
         return h
 
 
-class UNet(nn.Module):
-    """Lightweight U-Net for 28x28 single-channel latent denoising."""
+class ConditioningEmbedding(nn.Module):
+    """Projects a corruption conditioning vector into the timestep embedding space."""
 
-    def __init__(self, in_channels: int = 1, base_ch: int = 32, t_dim: int = 64):
+    def __init__(self, cond_dim: int = 3, t_dim: int = 64):
+        super().__init__()
+        self.proj = nn.Sequential(nn.Linear(cond_dim, t_dim), nn.SiLU())
+
+    def forward(self, c):
+        # c: (B, cond_dim) -> (B, t_dim)
+        return self.proj(c.float())
+
+
+class UNet(nn.Module):
+    """Lightweight U-Net for 28x28 single-channel latent denoising.
+
+    Optionally conditioned on a corruption type vector via `cond_dim`.
+    When `c` is provided in forward(), the conditioning embedding is added
+    to the timestep embedding before each ConvBlock. When `c=None`, the
+    model behaves identically to the unconditioned version.
+    """
+
+    def __init__(self, in_channels: int = 1, base_ch: int = 32, t_dim: int = 64, cond_dim: int = 3):
         super().__init__()
         self.t_emb = TimeEmbedding(t_dim)
+        self.cond_emb = ConditioningEmbedding(cond_dim, t_dim)
 
         self.enc1 = ConvBlock(in_channels, base_ch, t_dim)
         self.enc2 = ConvBlock(base_ch, base_ch * 2, t_dim)
@@ -55,8 +74,12 @@ class UNet(nn.Module):
 
         self.out = nn.Conv2d(base_ch, in_channels, 1)
 
-    def forward(self, x, t):
+    def forward(self, x, t, c=None):
         t_emb = self.t_emb(t)
+
+        # Add corruption conditioning to the timestep embedding when provided
+        if c is not None:
+            t_emb = t_emb + self.cond_emb(c)
 
         e1 = self.enc1(x, t_emb)
         e2 = self.enc2(self.pool(e1), t_emb)

@@ -6,7 +6,7 @@ Incremental implementation across 7 phases: update the distortion engine and DIP
 
 ## Tasks
 
-- [ ] 1. Update DistortionEngine to use canonical corruption type names
+- [x] 1. Update DistortionEngine to use canonical corruption type names
   - In `data/distortion_engine.py`, rename the dispatch keys from `"noise"`, `"blur"`, `"mask"` to `"gaussian_noise"`, `"motion_blur"`, `"spatial_masking"`
   - Update `add_gaussian_noise` to draw σ ~ Uniform(0.1, 0.5) per call (replacing the fixed `var` kwarg default)
   - Update `add_blur` to use a horizontal motion kernel (3×3 or 5×5) instead of Gaussian blur, matching the motion_blur spec
@@ -25,7 +25,7 @@ Incremental implementation across 7 phases: update the distortion engine and DIP
   - Add edge-case unit test: `apply_distortion` with an unknown type raises `ValueError`
   - _File: `tests/unit/test_distortion_engine.py`_
 
-- [ ] 2. Add `preprocess` function to DIP Layer
+- [x] 2. Add `preprocess` function to DIP Layer
   - In `src/preprocessing/dip_filters.py`, add a `preprocess(image: np.ndarray) -> np.ndarray` function that chains `median_filter(image, kernel_size=3)` → `cv2.equalizeHist`
   - Ensure the function accepts uint8 or float32 input (convert float32 → uint8 before `equalizeHist`, convert back if needed)
   - Keep the existing `apply_filter` dispatcher unchanged
@@ -37,7 +37,7 @@ Incremental implementation across 7 phases: update the distortion engine and DIP
   - Add unit test verifying median filter is applied before histogram equalization (mock or inspect intermediate state)
   - _File: `tests/unit/test_dip_filters.py`_
 
-- [ ] 3. Verify and complete VAE implementation
+- [x] 3. Verify and complete VAE implementation
   - Confirm `src/models/vae.py` matches the design spec: encoder produces `(mu, logvar)` each of shape `(B, 64)`, decoder produces `(B, 1, 28, 28)` with Sigmoid output
   - Add `encode` and `decode` as explicit public methods (currently only `forward` and `reparameterize` exist)
   - Verify `VAE.loss` uses `binary_cross_entropy` with `reduction="sum"` plus β·KL; add `beta` parameter (default 1.0)
@@ -50,7 +50,7 @@ Incremental implementation across 7 phases: update the distortion engine and DIP
   - Add unit tests: architecture has exactly 3 stride-2 conv layers in encoder; `loss` formula matches ELBO definition; `encoder.requires_grad_(False)` disables gradients
   - _File: `tests/unit/test_vae.py`_
 
-- [ ] 4. Implement CorruptionClassifier
+- [x] 4. Implement CorruptionClassifier
   - Create `src/models/corruption_classifier.py` with `CorruptionClassifier(nn.Module)` matching the design architecture: Conv→ReLU→MaxPool × 2, Flatten, Linear(3136→128)→ReLU→Dropout(0.3), Linear(128→3)
   - `forward` returns `(B, 3)` softmax probabilities
   - `predict_onehot` returns `(B, 3)` 1-hot tensor (argmax → scatter)
@@ -63,17 +63,17 @@ Incremental implementation across 7 phases: update the distortion engine and DIP
   - Add smoke test: classifier achieves > random baseline (> 33%) on a small held-out corrupted set after training
   - _File: `tests/unit/test_corruption_classifier.py`_
 
-- [ ] 5. Checkpoint — Ensure all tests pass
+- [x] 5. Checkpoint — Ensure all tests pass
   - Ensure all tests pass, ask the user if questions arise.
 
-- [ ] 6. Extend UNet with corruption conditioning
+- [x] 6. Extend UNet with corruption conditioning
   - In `src/models/unet.py`, add `ConditioningEmbedding(nn.Module)` with `proj = nn.Sequential(nn.Linear(cond_dim, t_dim), nn.SiLU())` where `cond_dim=3`, `t_dim=64`
   - Update `UNet.__init__` to accept optional `cond_dim: int = 3` and instantiate `self.cond_emb = ConditioningEmbedding(cond_dim, t_dim)`
   - Update `UNet.forward(self, x, t, c=None)`: compute `cond_emb = self.cond_emb(c)` when `c` is provided and add it to `t_emb` before passing to each `ConvBlock`
   - Keep backward compatibility: when `c=None`, skip conditioning (pure timestep embedding)
   - _Requirements: 5.2, 5.3_
 
-- [ ] 7. Update DiffusionEngine with conditioning and VAE integration
+- [x] 7. Update DiffusionEngine with conditioning and VAE integration
   - In `src/core/diffusion_engine.py`, update `__init__` to accept a `vae` parameter (optional, used during training)
   - Update `forward_process` to handle 1D latent vectors `(B, 64)` — change `view(-1, 1, 1, 1)` to `view(-1, 1)` for latent-space operation
   - Update `reverse_process(self, z_t, c)` to pass conditioning vector `c` to `self.unet(x, t_tensor, c)`
@@ -91,7 +91,7 @@ Incremental implementation across 7 phases: update the distortion engine and DIP
   - Add unit tests: configurable T; MSE loss formula; noise schedule β values at t=0 and t=T-1
   - _File: `tests/unit/test_diffusion_engine.py`_
 
-- [ ] 8. Wire end-to-end pipeline in main.py
+- [x] 8. Wire end-to-end pipeline in main.py
   - Rewrite `run_pipeline(cfg: dict) -> dict` in `main.py` to execute stages in order: DIP `preprocess` → VAE `encode` → `CorruptionClassifier.predict_onehot` → `DiffusionEngine.reverse_process(z, c)` → VAE `decode`
   - Load all four model checkpoints from paths in `cfg`; raise `FileNotFoundError` if any checkpoint is missing
   - Add CUDA fallback warning when `cfg["device"] == "cuda"` but CUDA is unavailable
@@ -108,7 +108,7 @@ Incremental implementation across 7 phases: update the distortion engine and DIP
   - Add edge-case unit test: `FileNotFoundError` raised when a checkpoint path does not exist
   - _File: `tests/unit/test_pipeline.py`_
 
-- [ ] 9. Implement metrics utilities
+- [x] 9. Implement metrics utilities
   - Create `src/utils/metrics.py` with three pure functions:
     - `compute_psnr(restored: Tensor, clean: Tensor) -> float` — returns dB value; returns `float("inf")` for identical inputs
     - `compute_elbo(vae: VAE, images: Tensor) -> float` — runs VAE forward pass and returns mean ELBO
@@ -123,14 +123,14 @@ Incremental implementation across 7 phases: update the distortion engine and DIP
   - **Validates: Requirements 7.5**
   - _File: `tests/unit/test_metrics.py`_
 
-- [ ] 10. Extend baseline evaluation script
+- [x] 10. Extend baseline evaluation script
   - Update `experiments/baseline_ocr_eval.py` to evaluate OCR on all three corruption types independently using `apply_distortion`
   - Record `a_clean` and `a_corrupted` per corruption type as a dict
   - Write results to JSON at the path from `cfg["evaluation"]["output_path"]`; create parent directories if needed
   - Import and use `compute_ocr_accuracy` from `src/utils/metrics.py`
   - _Requirements: 7.6, 8.1, 8.2, 8.3, 8.4_
 
-- [ ] 11. Update configuration and reproducibility utilities
+- [x] 11. Update configuration and reproducibility utilities
   - Update `config.yaml` to match the full schema from the design: add `vae.beta`, `vae.checkpoint`, `corruption_classifier` section, `evaluation.output_path`, top-level `seed`; update `data.distortion` to `"gaussian_noise"`; update `preprocessing.filter` to `"median"` with `kernel_size: 3`
   - Update `src/utils/config.py` `load_config` to validate required keys (`data.raw_dir`, `vae.latent_dim`, `diffusion.timesteps`, `diffusion.beta_start`, `diffusion.beta_end`) and raise `KeyError` with the missing key name
   - Apply seed from config to `torch`, `numpy`, and `random` at startup in `main.py`
@@ -141,16 +141,16 @@ Incremental implementation across 7 phases: update the distortion engine and DIP
   - Test that seed is applied to all three RNG sources
   - _File: `tests/unit/test_config.py`_
 
-- [ ] 12. Checkpoint — Ensure all tests pass
+- [x] 12. Checkpoint — Ensure all tests pass
   - Ensure all tests pass, ask the user if questions arise.
 
-- [ ] 13. Set up tests directory and integration tests
+- [x] 13. Set up tests directory and integration tests
   - Create `tests/__init__.py`, `tests/unit/__init__.py`, `tests/integration/__init__.py`
   - Create `tests/integration/test_baseline_eval.py`: run `baseline_ocr_eval.main()` with a small synthetic dataset (no real MNIST download) and assert the output JSON has the correct structure
   - Create `tests/integration/test_full_pipeline.py`: end-to-end smoke test with randomly initialized models (no trained weights) verifying stage ordering via mocks and that output shape is `(B, 1, 28, 28)`
   - _Requirements: 6.1, 8.4_
 
-- [ ] 14. Final checkpoint — Ensure all tests pass
+- [x] 14. Final checkpoint — Ensure all tests pass
   - Ensure all tests pass, ask the user if questions arise.
 
 ## Notes
