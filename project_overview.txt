@@ -1,0 +1,82 @@
+PROJECT SCOPE DOCUMENTATION 
+Adaptive Digit Restoration for Robust OCR using 
+Generative Models 
+Problem Statement 
+Optical Character Recognition (OCR) systems are widely used in applications such as 
+banking, postal services, and document digitization. However, their performance degrades 
+significantly when input images are corrupted due to noise, blur, or partial occlusion. Standard 
+datasets like MNIST enable high OCR accuracy under clean conditions but fail to represent 
+real-world distortions. 
+The objective of this project is to design a system capable of restoring corrupted handwritten 
+digits using a combination of Digital Image Processing (DIP) techniques and Generative 
+Models, thereby improving OCR performance under degraded conditions. 
+Motivation 
+Real-world OCR systems must operate on imperfect data where noise and distortions are 
+unavoidable. Traditional image processing techniques provide limited and non-adaptive 
+solutions, often failing when multiple types of noise are present simultaneously. 
+Generative models provide a principled approach to this problem by learning the underlying 
+data distribution. Variational Autoencoders (VAE) enable structured latent representations, while 
+diffusion models allow progressive denoising of corrupted inputs. Conditional mechanisms 
+further enable adaptive restoration based on the type of corruption. 
+Objective 
+The system aims to preprocess corrupted images, identify the type of distortion, reconstruct 
+clean digit representations using generative models, and evaluate improvements in OCR 
+accuracy. 
+Dataset 
+Dataset link: MNIST Handwritten Digits Dataset  
+The project utilizes the MNIST Handwritten Digits Dataset, a standard benchmark dataset 
+consisting of grayscale images of handwritten digits (0–9). The dataset contains 60,000 training 
+samples and 10,000 test samples, each of size 28×28 pixels. Synthetic distortions such as 
+Gaussian noise, motion blur, and masking are applied to simulate real-world degradation. 
+System Architecture 
+The system follows a structured pipeline beginning with corrupted input images, which are first 
+processed through a Digital Image Processing layer for basic enhancement and noise 
+reduction. The preprocessed images are then encoded into a latent representation using a 
+Variational Autoencoder. A corruption classifier predicts the type of noise present, which is used 
+to condition a latent diffusion process. The diffusion model, implemented using a U-Net 
+backbone, progressively denoises the latent representation. The decoded output is a restored 
+image, which is finally passed through an OCR classifier for evaluation. 
+Preprocessing and Digital Image Processing (DIP) 
+A preprocessing stage is incorporated to improve input quality before generative modeling. This 
+includes noise reduction using Gaussian and median filtering, contrast enhancement through 
+normalization and histogram equalization, edge preservation using gradient-based operators, 
+and morphological operations such as dilation and erosion. These steps help stabilize the 
+learning process and improve the effectiveness of downstream models. 
+Core Components 
+The Variational Autoencoder serves as the primary representation learning module. It encodes 
+images into a latent space and reconstructs them while maintaining a probabilistic structure 
+through Maximum Likelihood Estimation via the Evidence Lower Bound (ELBO). 
+The diffusion model operates in the latent space and learns to reverse noise through a stepwise 
+denoising process. A U-Net architecture is used as the backbone of the diffusion model, 
+enabling effective capture of both local and global features during noise prediction. 
+The conditional module incorporates information about the type of corruption, allowing the 
+model to adapt its restoration strategy dynamically. This improves performance across multiple 
+types of distortions. 
+The OCR classifier is implemented as a convolutional neural network trained on clean MNIST 
+data and used to evaluate the effectiveness of the restoration process. 
+Methodology 
+The workflow begins with preparing the dataset by applying synthetic distortions to clean MNIST 
+images. A baseline OCR model is trained on clean data and evaluated on corrupted inputs to 
+establish performance degradation. 
+The VAE is trained to learn latent representations of clean digits using reconstruction loss and 
+KL divergence. A classifier is trained to identify the type of corruption in input images. 
+The diffusion model is trained in latent space by adding noise and learning to reverse it using a 
+U-Net-based architecture. Conditional inputs are incorporated to guide the denoising process 
+based on predicted corruption types. 
+The final evaluation compares OCR accuracy across clean, corrupted, and restored images, 
+along with qualitative assessment of reconstructed outputs. 
+Expected Results 
+The system is expected to demonstrate a significant drop in OCR accuracy when images are 
+corrupted, followed by a measurable improvement after restoration. Restored images should 
+exhibit clearer structural features, leading to better classification performance. 
+Novelty and Contribution 
+This project introduces a hybrid approach combining Digital Image Processing and Generative 
+AI for adaptive image restoration. It integrates Variational Autoencoders, diffusion models with 
+U-Net architecture, and conditional control mechanisms to improve OCR performance. The key 
+contribution lies in demonstrating how generative models can enhance downstream tasks rather 
+than merely generating data. 
+Conclusion 
+This project presents a structured approach to improving OCR performance under noisy 
+conditions by combining classical image processing techniques with modern generative 
+modeling. By leveraging latent representations and diffusion-based denoising, the system 
+demonstrates how generative AI can be effectively applied to real-world vision problems. 
